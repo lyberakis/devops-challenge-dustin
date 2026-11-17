@@ -9,6 +9,12 @@ config:
   environment: test
   logLevel: DEBUG
 
+sealedSecret:
+  enabled: false
+  name: hello-world-secrets
+  encryptedData:
+    API_KEY: ""
+
 resources:
   requests:
     cpu: 100m

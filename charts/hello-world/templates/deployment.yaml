@@ -32,6 +32,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "hello-world.name" . }}
+          {{- if .Values.sealedSecret.enabled }}
+          env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sealedSecret.name | quote }}
+                  key: API_KEY
+          {{- end }}
           resources:
             {{ toYaml .Values.resources | nindent 12 }}
           startupProbe:
