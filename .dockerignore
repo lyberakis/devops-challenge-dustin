@@ -1,0 +1,13 @@
+# Only application source and build inputs belong in the build context.
+**
+!Dockerfile
+!.dockerignore
+!gradlew
+!settings.gradle.kts
+!build.gradle.kts
+!gradle/
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!src/
+!src/**
