@@ -1,0 +1,26 @@
+replicaCount: 1
+
+image:
+  repository: devops-challenge-dustin
+  tag: local
+  pullPolicy: IfNotPresent
+
+config:
+  environment: test
+  logLevel: DEBUG
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  host: ""
+
+pdb:
+  enabled: false
+  minAvailable: 1

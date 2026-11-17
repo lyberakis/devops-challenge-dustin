@@ -18,7 +18,7 @@ Build a runnable distribution with `./gradlew installDist`. The launcher and lib
 
 ### Docker
 
-Start Docker locally and execute:
+To run the app locally, start Docker and execute:
 
 ```bash
 docker build -t devops-challenge-dustin:local .
@@ -32,6 +32,22 @@ docker inspect --format '{{.State.Health.Status}}' devops-challenge-dustin
 ```
 
 The build stage runs tests and creates the application distribution. The runtime uses an Alpine Java 25 JRE, runs as UID/GID 10001, and contains only application libraries and runtime tools. Application files are owned by root so the app user cannot modify them.
+
+### Kubernetes with Helm
+
+The application chart is in `charts/hello-world`. It provides a Deployment, a ClusterIP Service, an Ingress, a ConfigMap, and a ServiceAccount. Pods run as non-root with a read-only filesystem and a writable `/tmp`.
+
+| Values file | Replicas | Logging | CPU request / limit | Memory request / limit | Disruption budget    |
+| --- | --- | --- |---------------| --- |----------------------|
+| `values-test.yaml` | 1 | DEBUG | 100m / 200m | 256Mi / 512Mi | Disabled             |
+| `values-production.yaml` | 3 | INFO | 500m / 1000m | 512Mi / 1Gi | At least 1 available |
+
+Validate and preview of helm charts:
+
+```bash
+helm lint charts/hello-world -f charts/hello-world/values-{environment}.yaml
+helm template demo charts/hello-world -f charts/hello-world/values-{environment}.yaml
+```
 
 ### Test
 
