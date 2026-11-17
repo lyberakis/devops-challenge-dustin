@@ -77,6 +77,11 @@ Responses use JSON content type. Unknown paths return 404 and unsupported method
 
 INFO logs show startup configuration and HTTP requests. DEBUG logs also show logging configuration and endpoint response details. To enable them, set `$env:LOG_LEVEL = "DEBUG"` in PowerShell or `export LOG_LEVEL=DEBUG` before starting the app.
 
+### GitHub Actions
+
+The workflow in `.github/workflows/build.yaml` runs on pushes to any branch, and manual runs from GitHub's Actions tab.
+It builds the Docker image with the commit SHA as its tag, runs the unit test through the Dockerfile, passes the built image as an artifact to a separate `test` job that starts it and checks both HTTP endpoints, and lints/renders the test and production Helm configurations.
+
 # Sealed Secrets
 
 ## 1. Install the controller

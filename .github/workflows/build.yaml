@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE: devops-challenge-dustin:${{ github.sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build image and run unit tests
+        run: docker build --tag "$IMAGE" .
+
+      - name: Save image
+        run: docker save --output image.tar "$IMAGE"
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      IMAGE: devops-challenge-dustin:${{ github.sha }}
+    steps:
+      - name: Download image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load image
+        run: docker load --input image.tar
+
+      - name: Smoke test the image
+        shell: bash
+        run: |
+          docker run --detach --name app --publish 127.0.0.1:8080:8080 --env ENVIRONMENT=ci "$IMAGE"
+          curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-connrefused --retry-max-time 120 --max-time 5 http://127.0.0.1:8080/health > health.json
+          jq --exit-status '.status == "healthy"' health.json
+          curl --fail --silent --show-error --max-time 5 http://127.0.0.1:8080/ > response.json
+          jq --exit-status '.message == "Hello, World!" and .environment == "ci"' response.json
+
+      - name: Show container logs
+        if: failure()
+        run: docker logs app 2>&1 || true
+
+  helm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        environment: [test, production]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.18.4
+
+      - name: Validate and render chart
+        env:
+          APP_ENV: ${{ matrix.environment }}
+        run: |
+          helm lint charts/hello-world -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml"
+          helm template demo charts/hello-world --namespace "hello-$APP_ENV" -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml" > rendered.yaml
