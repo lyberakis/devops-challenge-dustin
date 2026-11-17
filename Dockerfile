@@ -15,7 +15,5 @@ COPY --from=build /build/build/install/devops-challenge-dustin/lib/ ./lib/
 
 USER 10001:10001
 EXPOSE 8080
-# For local use only
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD curl --fail --silent --show-error --max-time 3 "http://127.0.0.1:${PORT:-8080}/health" > /dev/null || exit 1
 
 ENTRYPOINT ["java", "-cp", "/app/lib/*", "MainKt"]
