@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           docker run --detach --name app --publish 127.0.0.1:8080:8080 --env ENVIRONMENT=ci "$IMAGE"
-          curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-connrefused --retry-max-time 120 --max-time 5 http://127.0.0.1:8080/health > health.json
+          curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-all-errors --retry-max-time 120 --max-time 5 --output health.json http://127.0.0.1:8080/health
           jq --exit-status '.status == "healthy"' health.json
           curl --fail --silent --show-error --max-time 5 http://127.0.0.1:8080/ > response.json
           jq --exit-status '.message == "Hello, World!" and .environment == "ci"' response.json
