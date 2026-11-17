@@ -82,6 +82,8 @@ INFO logs show startup configuration and HTTP requests. DEBUG logs also show log
 The workflow in `.github/workflows/build.yaml` runs on pushes to any branch, and manual runs from GitHub's Actions tab.
 It builds the Docker image with the commit SHA as its tag, runs the unit test through the Dockerfile, passes the built image as an artifact to a separate `test` job that starts it and checks both HTTP endpoints, and lints/renders the test and production Helm configurations.
 
+The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
+
 # Sealed Secrets
 
 ## 1. Install the controller
