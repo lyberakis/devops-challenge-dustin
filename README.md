@@ -84,6 +84,8 @@ It builds the Docker image with the commit SHA as its tag, runs the unit test th
 
 The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
 
+On the default branch only, `deploy` waits for `test`, `security-scan`, and Helm validation to succeed, then commits the tested image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. This is the Helm equivalent of updating a Kustomize overlay. Feature branches still build and validate, but do not change deployment configuration.
+
 # Sealed Secrets
 
 ## 1. Install the controller

@@ -1,4 +1,6 @@
 replicaCount: 1
+image:
+  tag: local
 config:
   environment: test
   logLevel: DEBUG
