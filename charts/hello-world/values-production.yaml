@@ -1,4 +1,6 @@
 replicaCount: 3
+image:
+  tag: "117f14c9c7d02e2747713622bec467db10c45eb0"
 config:
   environment: production
   logLevel: INFO
