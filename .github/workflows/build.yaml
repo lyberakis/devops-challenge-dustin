@@ -90,8 +90,39 @@ jobs:
           format: table
           timeout: 10m
 
-  deploy:
+  publish:
     needs: [test, security-scan]
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: devops-challenge-dustin:${{ github.sha }}
+      GHCR_IMAGE: ghcr.io/lyberakis/devops-challenge-dustin:${{ github.sha }}
+    steps:
+      - name: Download tested image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load image
+        run: docker load --input image.tar
+
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
+
+      - name: Publish image
+        run: |
+          docker tag "$IMAGE" "$GHCR_IMAGE"
+          docker push "$GHCR_IMAGE"
+
+  deploy:
+    needs: publish
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 5

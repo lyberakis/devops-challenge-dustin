@@ -92,7 +92,9 @@ The separate `.github/workflows/helm.yaml` workflow runs only when files under `
 
 The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
 
-On the default branch only, `deploy` waits only for `test` and `security-scan` to succeed, then commits the tested image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. This is the Helm equivalent of updating a Kustomize overlay. Feature branches run the applicable checks, but do not change deployment configuration.
+On the default branch only, `publish` waits for `test` and `security-scan` to succeed, loads the same image artifact, and pushes it to `ghcr.io/lyberakis/devops-challenge-dustin` with the commit SHA as its tag. It uses the built-in `GITHUB_TOKEN` with `packages: write`; no additional registry secret is needed in GitHub Actions.
+
+After publishing succeeds, `deploy` commits the image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. Feature branches run the applicable checks but do not publish images or change deployment configuration.
 
 # Sealed Secrets
 
