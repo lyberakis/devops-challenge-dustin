@@ -49,6 +49,12 @@ helm lint charts/hello-world -f charts/hello-world/values-{environment}.yaml
 helm template demo charts/hello-world -f charts/hello-world/values-{environment}.yaml
 ```
 
+### Metrics collection
+
+The ServiceMonitor scrapes `/metrics` through the Service's named `http` port every 30 seconds. It selects the application's Service in the same namespace.
+
+Requires Prometheus Operator and its ServiceMonitor CRD before enabling this resource.
+
 ### Test
 
 Run `./gradlew test` (PowerShell: `./gradlew.bat test`). Tests check the application responses and verify that `/metrics` exposes JVM metrics and records an HTTP request using Ktor's in-process test server.

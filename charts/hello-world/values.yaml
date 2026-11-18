@@ -30,3 +30,8 @@ ingress:
 pdb:
   enabled: false
   minAvailable: 1
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  labels: {}
