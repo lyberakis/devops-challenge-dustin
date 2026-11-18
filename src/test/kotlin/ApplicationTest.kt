@@ -22,7 +22,7 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, greeting.status)
         assertEquals(ContentType.Application.Json, greeting.contentType()?.withoutParameters())
         assertEquals(
-            Json.parseToJsonElement("""{"message":"Hello, World!","environment":"test"}"""),
+            Json.parseToJsonElement("""{"message":"Hello, Dustin!","environment":"test"}"""),
             Json.parseToJsonElement(greeting.bodyAsText()),
         )
     }
