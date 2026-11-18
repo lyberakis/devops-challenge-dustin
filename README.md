@@ -96,34 +96,3 @@ On the default branch only, `publish` waits for `test` and `security-scan` to su
 
 After publishing succeeds, `deploy` commits the image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. Feature branches run the applicable checks but do not publish images or change deployment configuration.
 
-# Sealed Secrets
-
-## 1. Install the controller
-
-```bash
-helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
-helm repo update
-helm upgrade --install sealed-secrets sealed-secrets/sealed-secrets --version 2.22.0 --namespace kube-system --set fullnameOverride=sealed-secrets-controller --wait --timeout 5m
-```
-
-## 2. Seal a secret
-
-Set the environment to `test` or `production`, then fetch the cluster's public certificate:
-
-```bash
-APP_ENV=test
-mkdir -p .secrets
-kubeseal --controller-name=sealed-secrets-controller --controller-namespace=kube-system --fetch-cert > .secrets/sealed-secrets.pem
-```
-
-Enter the API key at the hidden prompt and encrypt it:
-
-```bash
-read -rsp 'API key: ' APP_API_KEY
-printf '%s' "$APP_API_KEY" | kubeseal --raw --scope strict --cert .secrets/sealed-secrets.pem --namespace "hello-$APP_ENV" --name hello-world-secrets > ".secrets/api-key-$APP_ENV.encrypted"
-unset APP_API_KEY
-```
-
-After successful encryption, copy the ciphertext into `sealedSecret.encryptedData.API_KEY` in `charts/hello-world/values-test-secrets.yaml` or `values-production-secrets.yaml`, and set `enabled: true`. Seal separately for each environment. The namespace (`hello-test` or `hello-production`), Secret name (`hello-world-secrets`), and cluster must match the deployment.
-
-For a more user-friendly usage, a UI is also available https://github.com/bakito/sealed-secrets-web to avoid regularly sealing of secrets in a terminal.
