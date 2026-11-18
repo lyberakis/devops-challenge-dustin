@@ -24,7 +24,6 @@ resources:
     memory: 512Mi
 
 ingress:
-  enabled: true
   host: ""
 
 pdb:

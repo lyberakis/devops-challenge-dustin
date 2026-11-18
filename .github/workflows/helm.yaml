@@ -5,6 +5,7 @@ on:
     branches: ['**']
     paths:
       - 'charts/**'
+      - 'infrastructure/**'
 
 permissions:
   contents: read
