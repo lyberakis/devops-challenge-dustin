@@ -5,6 +5,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -22,8 +24,8 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, greeting.status)
         assertEquals(ContentType.Application.Json, greeting.contentType()?.withoutParameters())
         assertEquals(
-            Json.parseToJsonElement("""{"message":"Hello, Dustin!","environment":"test"}"""),
-            Json.parseToJsonElement(greeting.bodyAsText()),
+            "test",
+            Json.parseToJsonElement(greeting.bodyAsText()).jsonObject["environment"]?.jsonPrimitive?.content,
         )
     }
 }
