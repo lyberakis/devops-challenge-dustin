@@ -1,0 +1,35 @@
+name: Helm
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'charts/**'
+
+permissions:
+  contents: read
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        environment: [test, production]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.18.4
+
+      - name: Validate and render chart
+        env:
+          APP_ENV: ${{ matrix.environment }}
+        run: |
+          helm lint charts/hello-world -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml"
+          helm template demo charts/hello-world --namespace "hello-$APP_ENV" -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml" > rendered.yaml

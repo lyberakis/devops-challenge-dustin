@@ -3,6 +3,14 @@ name: Build
 on:
   push:
     branches: ['**']
+    paths:
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
 
 permissions:
   contents: read
@@ -30,30 +38,6 @@ jobs:
           path: image.tar
           retention-days: 1
           if-no-files-found: error
-
-  helm:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      matrix:
-        environment: [test, production]
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.18.4
-
-      - name: Validate and render chart
-        env:
-          APP_ENV: ${{ matrix.environment }}
-        run: |
-          helm lint charts/hello-world -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml"
-          helm template demo charts/hello-world --namespace "hello-$APP_ENV" -f "charts/hello-world/values-$APP_ENV.yaml" -f "charts/hello-world/values-$APP_ENV-secrets.yaml" > rendered.yaml
 
   test:
     needs: build
@@ -107,7 +91,7 @@ jobs:
           timeout: 10m
 
   deploy:
-    needs: [test, security-scan, helm]
+    needs: [test, security-scan]
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 5

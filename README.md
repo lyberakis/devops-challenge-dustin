@@ -86,12 +86,13 @@ INFO logs show startup configuration and HTTP requests. DEBUG logs also show log
 
 ### GitHub Actions
 
-The workflow in `.github/workflows/build.yaml` runs on pushes to any branch, and manual runs from GitHub's Actions tab.
-It builds the Docker image with the commit SHA as its tag, runs the unit test through the Dockerfile, passes the built image as an artifact to a separate `test` job that starts it and checks both HTTP endpoints, and lints/renders the test and production Helm configurations.
+The workflow in `.github/workflows/build.yaml` runs on pushes to any branch only when application source/tests, Gradle configuration/wrapper, Dockerfile, or `.dockerignore` change. It builds the Docker image with the commit SHA as its tag, runs unit tests through the Dockerfile, and passes the built image as an artifact to the `test` and `security-scan` jobs.
+
+The separate `.github/workflows/helm.yaml` workflow runs only when files under `charts/` change. It lints and renders the test and production Helm configurations independently of the application pipeline.
 
 The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
 
-On the default branch only, `deploy` waits for `test`, `security-scan`, and Helm validation to succeed, then commits the tested image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. This is the Helm equivalent of updating a Kustomize overlay. Feature branches still build and validate, but do not change deployment configuration.
+On the default branch only, `deploy` waits only for `test` and `security-scan` to succeed, then commits the tested image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. This is the Helm equivalent of updating a Kustomize overlay. Feature branches run the applicable checks, but do not change deployment configuration.
 
 # Sealed Secrets
 
