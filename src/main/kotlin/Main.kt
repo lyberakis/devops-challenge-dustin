@@ -56,7 +56,7 @@ fun Application.module(environment: String) {
         }
         status(HttpStatusCode.MethodNotAllowed) { call, status ->
             call.response.headers.append(HttpHeaders.Allow, "GET")
-            call.respond(status, mapOf("error" to "Method not allowed"))
+            call.respond(status, mapOf("error" to "Method is not allowed"))
         }
     }
 
