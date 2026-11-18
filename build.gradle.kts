@@ -13,6 +13,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.17.1")
     runtimeOnly("org.slf4j:slf4j-simple:2.0.17")
     testImplementation(kotlin("test-junit"))
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

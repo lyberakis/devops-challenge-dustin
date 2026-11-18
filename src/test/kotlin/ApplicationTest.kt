@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 
 class ApplicationTest {
     @Test
-    fun `endpoints return healthy status and configured environment`() = testApplication {
+    fun happyFlow() = testApplication {
         application { module("test") }
 
         val health = client.get("/health")

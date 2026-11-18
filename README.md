@@ -51,7 +51,7 @@ helm template demo charts/hello-world -f charts/hello-world/values-{environment}
 
 ### Test
 
-Run `./gradlew test` (PowerShell: `./gradlew.bat test`). The test checks both endpoints' status codes, JSON content type, and response bodies using Ktor's in-process test server.
+Run `./gradlew test` (PowerShell: `./gradlew.bat test`). Tests check the application responses and verify that `/metrics` exposes JVM metrics and records an HTTP request using Ktor's in-process test server.
 
 ### Configuration
 
@@ -72,8 +72,9 @@ Git Bash/Linux/macOS example: `export ENVIRONMENT=test`
 
 - `GET http://localhost:8080/health` returns `{"status":"healthy"}`.
 - `GET http://localhost:8080/` returns `{"message":"Hello, World!","environment":"development"}` with the configured environment name.
+- `GET http://localhost:8080/metrics` exposes HTTP request counts/durations and JVM metrics in Prometheus text format through Micrometer. Request metrics appear after requests have been handled. Check with `curl http://localhost:8080/metrics`.
 
-Responses use JSON content type. Unknown paths return 404 and unsupported methods return 405. Startup and request logs go to standard error.
+Application responses use JSON; `/metrics` uses Prometheus plain text. Unknown paths return 404 and unsupported methods return 405. Startup and request logs go to standard error.
 
 INFO logs show startup configuration and HTTP requests. DEBUG logs also show logging configuration and endpoint response details. To enable them, set `$env:LOG_LEVEL = "DEBUG"` in PowerShell or `export LOG_LEVEL=DEBUG` before starting the app.
 
