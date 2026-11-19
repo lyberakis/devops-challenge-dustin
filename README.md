@@ -84,10 +84,6 @@ App change → build → test + security scan → publish to GHCR → Deploy to 
 Chart change → Helm validation; Argo CD applies the chart from Git
 ```
 
-#### Potential expansions
-
-For multiple people teams, the best practice would be to protect the main branch from directly commiting there. This can be done with pull requests of branches to main with required reviewers and required builds prior to merging. 
-
 ### Infrastructure
 
 The application runs on an Amazon EKS Auto Mode cluster in Frankfurt (`eu-central-1`), with separate `hello-test` and `hello-production` namespaces. Auto Mode manages worker-node provisioning and load balancing. The shared `alb` IngressClass configures internet-facing Application Load Balancers that route traffic to the application pods.
@@ -137,3 +133,12 @@ This is a list of alerts that a production-like application could use. These are
 | Node health and capacity | Node NotReady, persistent MemoryPressure/DiskPressure, or disk/inode availability.                                                                           |
 | Container instability    | CrashLoopBackOff for longer periods, multiple restarts in short timeframes, or OOM kills. Warn on memory above 80% of its limit or sustained CPU throttling. |
 | Scheduling and rollouts  | Pods Pending or unable to pull images; available replicas below desired.                                                                                     |
+
+
+### Potential expansions
+
+For multiple people teams, the best CI/CD practice would be to protect the main branch from directly commiting there. This can be done with pull requests of branches to main with required reviewers and required builds prior to merging. 
+
+Apply least-privilege Kubernetes RBAC access policies to users and controllers. Application ServiceAccounts should receive Kubernetes API permissions only when required.
+
+Extend infrastructure as code to AWS resources using Terraform, covering EKS, networking, and IAM alongside the existing Helm and Argo CD manifests.
