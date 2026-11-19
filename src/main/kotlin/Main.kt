@@ -29,7 +29,10 @@ fun main() {
 
     val environment = System.getenv("ENVIRONMENT") ?: "development"
     val host = System.getenv("HOST") ?: "0.0.0.0"
-    val port = (System.getenv("PORT") ?: "8080").toInt()
+    val portValue = System.getenv("PORT") ?: "8080"
+    val port = requireNotNull(portValue.toIntOrNull()?.takeIf { it in 1..65535 }) {
+        "PORT must be an integer between 1 and 65535, got '$portValue'"
+    }
     val logger = LoggerFactory.getLogger("app")
     logger.info("Starting server on {}:{} in environment {}", host, port, environment)
     logger.debug("Logging configured at {} level", logLevel)

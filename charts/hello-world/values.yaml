@@ -8,6 +8,7 @@ image:
 config:
   environment: test
   logLevel: DEBUG
+  port: 8080
 
 sealedSecret:
   enabled: false
