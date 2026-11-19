@@ -1,6 +1,6 @@
 replicaCount: 1
 image:
-  tag: "f56225f992377c81d79677873a47b7c02ef9b660"
+  tag: "020cba2b18c95a4c07a34ec2a8a6759fe7af6630"
   repository: ghcr.io/lyberakis/devops-challenge-dustin
 config:
   environment: test
