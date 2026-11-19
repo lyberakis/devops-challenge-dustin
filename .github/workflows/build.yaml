@@ -11,6 +11,8 @@ on:
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
+      - 'Dockerfile'
+      - '.dockerignore'
 
 permissions:
   contents: read
