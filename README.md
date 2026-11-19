@@ -71,7 +71,7 @@ The separate `.github/workflows/helm.yaml` workflow runs only when files under `
 
 The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
 
-On the default branch only, `publish` waits for `test` and `security-scan` to succeed, loads the same image artifact, and pushes it to `ghcr.io/lyberakis/devops-challenge-dustin` with the commit SHA as its tag. It uses the built-in `GITHUB_TOKEN` with `packages: write`; no additional registry secret is needed in GitHub Actions.
+On the default branch only, `publish` waits for `test` and `security-scan` to succeed, loads the same image artifact, and pushes it to `ghcr.io/lyberakis/devops-challenge-dustin` with the commit SHA as its tag. It uses the built-in `GITHUB_TOKEN` with `packages: write`. For this exercise, GHCR is used with public access for a more straightforward approach. In a production-grade setup, artifacts would be stored in a secure registry and only authorized accounts would have access.
 
 After publishing succeeds, `deploy` commits the image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. Feature branches run the applicable checks but do not publish images or change deployment configuration.
 
@@ -83,6 +83,10 @@ If production already uses the image, no commit is created. If test does not mat
 App change → build → test + security scan → publish to GHCR → Deploy to test → Deploy to production (manual trigger)
 Chart change → Helm validation; Argo CD applies the chart from Git
 ```
+
+#### Potential expansions
+
+For multiple people teams, the best practice would be to protect the main branch from directly commiting there. This can be done with pull requests of branches to main with required reviewers and required builds prior to merging. 
 
 ### Infrastructure
 
