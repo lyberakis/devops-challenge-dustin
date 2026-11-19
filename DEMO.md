@@ -66,7 +66,6 @@ Apply the following once:
 ```bash
 git pull
 kubectl apply -f infrastructure/argocd/argocd.yaml
-kubectl get applications.argoproj.io -n argocd
 ```
 
 ## 5. Get the application address
