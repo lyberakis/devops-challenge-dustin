@@ -60,23 +60,14 @@ This will give an IP Address from AWS with a unique DNS hostname.
 
 ## 4. Create the applications on ArgoCD
 
-For each environment, create an ArgoCD application by selecting **New App** and filling in the following:
+There is a parent Application, defined in `infrastructure/argocd/argocd.yaml`, to watch `infrastructure/argocd/applications/`. The child manifests `test.yaml` and `production.yaml` manage `hello-test` and `hello-production`.
 
-| Field | Value |
-| --- | --- |
-| Application name | `hello-<environment>` |
-| Project | `default` |
-| Repository URL | `https://github.com/lyberakis/devops-challenge-dustin.git` |
-| Revision | `HEAD` |
-| Path | `charts/hello-world` |
-| Destination cluster | `https://kubernetes.default.svc` |
-| Destination namespace | `hello-<environment>` |
-| Helm release name | `hello-<environment>` |
-| Helm values files, in order | `values-<environment>.yaml`, `values-<environment>-secrets.yaml` |
-| Sync policy | Automatic, with prune and self-heal |
-| Sync options | Auto-create namespace |
-
-Create each application and wait for it to become **Synced**. 
+Apply the following once:
+```bash
+git pull
+kubectl apply -f infrastructure/argocd/argocd.yaml
+kubectl get applications.argoproj.io -n argocd
+```
 
 ## 5. Get the application address
 
