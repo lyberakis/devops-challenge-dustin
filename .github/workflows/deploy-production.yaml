@@ -1,0 +1,85 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  deploy:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: deploy-test
+      cancel-in-progress: false
+    steps:
+      - name: Promote the latest successful test image
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branch = context.payload.repository.default_branch;
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              ...context.repo,
+              workflow_id: 'build.yaml',
+              branch,
+              event: 'push',
+              status: 'success',
+              per_page: 1,
+            });
+            const run = runs.workflow_runs[0];
+            if (!run) throw new Error('No successful Build run found on the default branch.');
+
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              ...context.repo, run_id: run.id, filter: 'latest', per_page: 100,
+            });
+            for (const name of ['build', 'test', 'security-scan', 'publish', 'deploy']) {
+              if (!jobs.some(job => job.name === name && job.conclusion === 'success')) {
+                throw new Error(`Build run ${run.id} has no successful ${name} job.`);
+              }
+            }
+
+            const { data: head } = await github.rest.repos.getBranch({ ...context.repo, branch });
+            const readFile = async path => {
+              const { data: file } = await github.rest.repos.getContent({
+                ...context.repo, path, ref: head.commit.sha,
+              });
+              return { ...file, text: Buffer.from(file.content, 'base64').toString('utf8') };
+            };
+            const test = await readFile('charts/hello-world/values-test.yaml');
+            const path = 'charts/hello-world/values-production.yaml';
+            const production = await readFile(path);
+            const imagePattern = /^image:\r?\n(?:[ \t]+[^\r\n]*(?:\r?\n|$))*/m;
+            const readImage = text => {
+              const block = text.match(imagePattern)?.[0];
+              const tag = block?.match(/^  tag: ["']?([a-f0-9]{40})["']?[ \t]*\r?$/m)?.[1];
+              const repository = block?.match(/^  repository: ["']?([^\s"']+)["']?[ \t]*\r?$/m)?.[1];
+              if (!tag || !repository) throw new Error('Expected image.tag (commit SHA) and image.repository in values.');
+              return { block, tag, repository };
+            };
+            const testImage = readImage(test.text);
+            const productionImage = readImage(production.text);
+            if (testImage.tag !== run.head_sha) {
+              throw new Error('Test image does not match the latest successful Build run. Wait for the test pipeline to finish and retry.');
+            }
+            if (testImage.repository !== 'ghcr.io/lyberakis/devops-challenge-dustin') {
+              throw new Error('Test image repository does not match the Build workflow publication target.');
+            }
+            const image = `${testImage.repository}:${testImage.tag}`;
+            if (productionImage.tag === testImage.tag && productionImage.repository === testImage.repository) {
+              core.notice(`Production already references ${image}. No commit needed.`);
+              return;
+            }
+            const updated = production.text.replace(imagePattern, testImage.block);
+            const { data: current } = await github.rest.repos.getBranch({ ...context.repo, branch });
+            if (current.commit.sha !== head.commit.sha) {
+              throw new Error('Default branch changed during promotion. Run the workflow again.');
+            }
+            await github.rest.repos.createOrUpdateFileContents({
+              ...context.repo, path, branch, sha: production.sha,
+              message: `Deploy production image ${testImage.tag}`,
+              content: Buffer.from(updated).toString('base64'),
+            });
+            core.notice(`Promoted ${image} from successful Build run ${run.html_url}. Argo CD will sync production.`);

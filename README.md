@@ -96,3 +96,7 @@ On the default branch only, `publish` waits for `test` and `security-scan` to su
 
 After publishing succeeds, `deploy` commits the image SHA to `image.tag` in `charts/hello-world/values-test.yaml`. Feature branches run the applicable checks but do not publish images or change deployment configuration.
 
+Production promotion is manual: select **Actions → Deploy production → Run workflow** on the default branch. The workflow checks the latest successful default-branch Build run and its build, test, scan, publish, and test-deployment jobs. It requires the test values' image tag to match that run, then copies the image configuration to production.
+
+If production already uses the image, no commit is created. If test does not match the latest successful run or the branch changes during the check, promotion fails and can be retried.
+
