@@ -34,11 +34,13 @@ spec:
                 name: {{ include "hello-world.name" . }}
           {{- if .Values.sealedSecret.enabled }}
           env:
-            - name: API_KEY
+            {{- range $key, $_ := .Values.sealedSecret.encryptedData }}
+            - name: {{ $key }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.sealedSecret.name | quote }}
-                  key: API_KEY
+                  name: {{ $.Values.sealedSecret.name | quote }}
+                  key: {{ $key }}
+            {{- end }}
           {{- end }}
           resources:
             {{ toYaml .Values.resources | nindent 12 }}

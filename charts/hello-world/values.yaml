@@ -13,8 +13,7 @@ config:
 sealedSecret:
   enabled: false
   name: hello-world-secrets
-  encryptedData:
-    API_KEY: ""
+  encryptedData: {}
 
 resources:
   requests:
