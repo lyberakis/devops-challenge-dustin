@@ -1,15 +1,8 @@
 # EKS and Argo CD demo
 
-Deploy the application to EKS Auto Mode using GitHub Actions, GHCR, and Argo CD.
+Here are the steps to deploy the application to EKS Auto Mode using GitHub Actions, GHCR, and Argo CD.
 
-```text
-App change → build → test + security scan → publish to GHCR → commit image tag
-                                                                    ↓
-                                                       Argo CD → EKS
-Chart change → Helm validation; Argo CD applies the chart from Git
-```
-
-Run the shell commands below in AWS CloudShell unless explicitly marked local. Each command is on a single line. AWS infrastructure incurs charges while it exists.
+Run the shell commands below in AWS CloudShell.
 
 ## 1. Create the EKS cluster
 
@@ -45,7 +38,7 @@ For the public browser access used in this demo, run this in **CloudShell**:
 kubectl get svc argocd-server -n argocd
 ```
 
-When `EXTERNAL-IP` shows an AWS hostname, press Ctrl+C and open `https://<hostname>`.
+Open `https://<hostname>` to see the ArgoCD UI.
 
 # 3. Enable the ingress class
 
@@ -74,7 +67,7 @@ kubectl apply -f infrastructure/argocd/argocd.yaml
 kubectl get ingress -n hello-<environment>
 ```
 
-When `ADDRESS` appears, press Ctrl+C. Obtain and test the hostname by opening `http://<ADDRESS>/` in your browser.
+Get the hostname by opening `http://<ADDRESS>/` in your browser.
 
 ## 6. Create Sealed Secrets
 

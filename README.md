@@ -16,6 +16,10 @@ Git Bash/Linux/macOS: `./gradlew run`
 
 Build a runnable distribution with `./gradlew installDist`. The launcher and libraries are written to `build/install/devops-challenge-dustin/`.
 
+### Test
+
+Run `./gradlew test` (PowerShell: `./gradlew.bat test`). Tests check the application responses and verify that `/metrics` exposes JVM metrics and records an HTTP request using Ktor's in-process test server.
+
 ### Docker
 
 To run the app locally, start Docker and execute:
@@ -37,10 +41,10 @@ The build stage runs tests and creates the application distribution. The runtime
 
 The application chart is in `charts/hello-world`. It provides a Deployment, a ClusterIP Service, an Ingress, a ConfigMap, and a ServiceAccount. Pods run as non-root with a read-only filesystem and a writable `/tmp`.
 
-| Values file | Replicas | Logging | CPU request / limit | Memory request / limit | Disruption budget    |
-| --- | --- | --- |---------------| --- |----------------------|
-| `values-test.yaml` | 1 | DEBUG | 100m / 200m | 256Mi / 512Mi | Disabled             |
-| `values-production.yaml` | 3 | INFO | 500m / 1000m | 512Mi / 1Gi | At least 1 available |
+| Values file              | Replicas | Logging | CPU request / limit | Memory request / limit | Disruption budget    |
+|--------------------------|----------|---------|---------------------|------------------------|----------------------|
+| `values-test.yaml`       | 1        | DEBUG   | 100m / 200m         | 256Mi / 512Mi          | Disabled             |
+| `values-production.yaml` | 3        | INFO    | 500m / 1000m        | 512Mi / 1Gi            | At least 1 available |
 
 Validate and preview of helm charts:
 
@@ -48,31 +52,6 @@ Validate and preview of helm charts:
 helm lint charts/hello-world -f charts/hello-world/values-{environment}.yaml
 helm template demo charts/hello-world -f charts/hello-world/values-{environment}.yaml
 ```
-
-### Metrics collection
-
-The ServiceMonitor scrapes `/metrics` through the Service's named `http` port every 30 seconds. It selects the application's Service in the same namespace.
-
-Requires Prometheus Operator and its ServiceMonitor CRD before enabling this resource.
-
-### Test
-
-Run `./gradlew test` (PowerShell: `./gradlew.bat test`). Tests check the application responses and verify that `/metrics` exposes JVM metrics and records an HTTP request using Ktor's in-process test server.
-
-### Configuration
-
-Set environment variables before starting:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `ENVIRONMENT` | `development` | Environment name returned by `/` |
-| `HOST` | `0.0.0.0` | Address to listen on |
-| `PORT` | `8080` | HTTP port |
-| `LOG_LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `ERROR` |
-
-PowerShell example: `$env:ENVIRONMENT = "test"`
-
-Git Bash/Linux/macOS example: `export ENVIRONMENT=test`
 
 ### Endpoints
 
@@ -82,13 +61,13 @@ Git Bash/Linux/macOS example: `export ENVIRONMENT=test`
 
 Application responses use JSON; `/metrics` uses Prometheus plain text. Unknown paths return 404 and unsupported methods return 405. Startup and request logs go to standard error.
 
-INFO logs show startup configuration and HTTP requests. DEBUG logs also show logging configuration and endpoint response details. To enable them, set `$env:LOG_LEVEL = "DEBUG"` in PowerShell or `export LOG_LEVEL=DEBUG` before starting the app.
+INFO logs show startup configuration and HTTP requests. DEBUG logs also show logging configuration and endpoint response details.
 
 ### GitHub Actions
 
 The workflow in `.github/workflows/build.yaml` runs on pushes to any branch only when application source/tests, Gradle configuration/wrapper, Dockerfile, or `.dockerignore` change. It builds the Docker image with the commit SHA as its tag, runs unit tests through the Dockerfile, and passes the built image as an artifact to the `test` and `security-scan` jobs.
 
-The separate `.github/workflows/helm.yaml` workflow runs only when files under `charts/` change. It lints and renders the test and production Helm configurations independently of the application pipeline.
+The separate `.github/workflows/helm.yaml` workflow runs only when files under `charts/` or `infrastructure/` change. It lints and renders the test and production Helm configurations independently of the application pipeline.
 
 The `security-scan` job runs alongside `test` after the image build. Trivy scans the same image artifact for OS and application dependency vulnerabilities and fails the workflow if any HIGH or CRITICAL vulnerabilities are found, including those without fixes. Results appear in the job log.
 
@@ -100,3 +79,57 @@ Production promotion is manual: select **Actions → Deploy production → Run w
 
 If production already uses the image, no commit is created. If test does not match the latest successful run or the branch changes during the check, promotion fails and can be retried.
 
+```text
+App change → build → test + security scan → publish to GHCR → Deploy to test → Deploy to production (manual trigger)
+Chart change → Helm validation; Argo CD applies the chart from Git
+```
+
+### Infrastructure
+
+The application runs on an Amazon EKS Auto Mode cluster in Frankfurt (`eu-central-1`), with separate `hello-test` and `hello-production` namespaces. Auto Mode manages worker-node provisioning and load balancing. The shared `alb` IngressClass configures internet-facing Application Load Balancers that route traffic to the application pods.
+
+Argo CD runs in the same cluster and deploys the Helm chart from Git. A parent Application manages the test and production Applications, which automatically create their namespaces and synchronize configuration changes. GitHub Actions publishes images to GHCR and updates the image tags in Git; Argo CD applies those changes to EKS. Cluster setup and bootstrap instructions are documented in [DEMO.md](DEMO.md).
+
+Sealed Secret is also installed under the same cluster under its own namespace.
+
+### Secrets Management
+
+This project uses Sealed Secrets to store encrypted secret values in Git. The controller decrypts them into Kubernetes Secrets inside the cluster. For production applications on AWS, AWS Secrets Manager would be a more suitable choice for centralized secret management. 
+
+Applications can access AWS Secrets Manager through IAM roles associated with their Kubernetes ServiceAccounts, with permissions restricted to the secrets each application needs. Secret values are stored and versioned in Secrets Manager rather than Git.
+
+### Observability
+
+The application writes startup and request logs to stderr and exposes HTTP and JVM metrics at `/metrics` through Micrometer. The optional ServiceMonitor scrapes every 30 seconds when enabled; it requires Prometheus configured to discover its labels and namespace.
+
+#### Infrastructure monitoring
+
+| Area                | Signals and purpose                                                                                                                                                                                                                              |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Cluster and nodes   | Monitor node readiness, CPU and memory usage, disk space/inodes, disk I/O latency, network throughput/errors, and memory/disk pressure.                                                                                                          |
+| Pods and containers | Compare actual CPU and memory usage with requests and limits. Monitor CPU throttling, memory approaching limits, OOM kills, and ephemeral storage usage. Track restarts, CrashLoopBackOff, failed probes, Pending pods, and image-pull failures. |
+| Deployments         | Compare desired, updated, ready, and available replicas. Detect stalled rollouts and progress-deadline failures. Monitor ArgoCD sync errors, degraded health, and prolonged OutOfSync state.                                                     |
+
+Use the **RED** principle for application health: request **Rate**, **Errors** (especially the HTTP 5xx ratio), and **Duration** (latency, including p95/p99). 
+
+Use the **USE** principle for resources: **Utilization** (CPU, memory, disk/network throughput), **Saturation** (CPU or I/O queues, throttling, and insufficient capacity leaving pods Pending), and **Errors** (disk/network errors and OOM kills).
+
+#### Production tools
+
+- **Metrics:** Prometheus and Grafana dashboards. Collect application metrics through the ServiceMonitor, object state through kube-state-metrics, and node/container usaged.
+- **Logging:** Add structured JSON logs with environment, namespace, pod, and request/trace IDs; use INFO in production and DEBUG temporarily. Set retention and access controls, and exclude secrets. Use Elasticsearch as an open-source option to collect the logs and Kibana for visualization.
+- **Tracing:** OpenTelemetry for collecting and processing telemetry data of the JVM application.
+- **Alerting:** Prometheus rules and Alertmanager for notification routing, grouping, and deduplication.
+
+#### Alerts to add
+
+This is a list of alerts that a production-like application could use. These are conditions to tune against measured traffic and service objectives.
+
+| Alert                    | Condition                                                                                                                                                    |
+|--------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Application unavailable  | Check the health status URL of the application.                                                                                                              |
+| JVM heap pressure        | Heap used above 90%, or long GC pauses                                                                                                                       |
+| Errors                   | Repeated HTTP 5xx errors.                                                                                                                                    |
+| Node health and capacity | Node NotReady, persistent MemoryPressure/DiskPressure, or disk/inode availability.                                                                           |
+| Container instability    | CrashLoopBackOff for longer periods, multiple restarts in short timeframes, or OOM kills. Warn on memory above 80% of its limit or sustained CPU throttling. |
+| Scheduling and rollouts  | Pods Pending or unable to pull images; available replicas below desired.                                                                                     |
