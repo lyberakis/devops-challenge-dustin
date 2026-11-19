@@ -1,14 +1,6 @@
 replicaCount: 1
 image:
   tag: "e1d10e23e160ecbc0557b182c113833cfde00a51"
-  repository: ghcr.io/lyberakis/devops-challenge-dustin
 config:
   environment: test
   logLevel: DEBUG
-resources:
-  requests:
-    cpu: 100m
-    memory: 256Mi
-  limits:
-    cpu: 200m
-    memory: 512Mi

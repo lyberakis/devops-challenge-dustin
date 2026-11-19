@@ -1,13 +1,10 @@
 replicaCount: 1
 
 image:
-  repository: devops-challenge-dustin
-  tag: local
+  repository: ghcr.io/lyberakis/devops-challenge-dustin
   pullPolicy: IfNotPresent
 
 config:
-  environment: test
-  logLevel: DEBUG
   port: 8080
 
 sealedSecret:
@@ -20,7 +17,7 @@ resources:
     cpu: 100m
     memory: 256Mi
   limits:
-    cpu: "1"
+    cpu: 200m
     memory: 512Mi
 
 ingress:
