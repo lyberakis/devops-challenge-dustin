@@ -9,6 +9,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ApplicationTest {
     @Test
@@ -27,5 +28,17 @@ class ApplicationTest {
             "test",
             Json.parseToJsonElement(greeting.bodyAsText()).jsonObject["environment"]?.jsonPrimitive?.content,
         )
+    }
+
+    @Test
+    fun metricsExposeJvmAndHttpMetrics() = testApplication {
+        application { module("test") }
+
+        client.get("/health")
+        val metrics = client.get("/metrics")
+        assertEquals(HttpStatusCode.OK, metrics.status)
+        val body = metrics.bodyAsText()
+        assertTrue("jvm_memory_used_bytes" in body, "JVM metrics missing")
+        assertTrue("ktor_http_server_requests" in body, "HTTP request metrics missing")
     }
 }
