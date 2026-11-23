@@ -35,6 +35,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 For the public browser access used in this demo, run this in **CloudShell**:
 
 ```bash
+kubectl patch svc argocd-server -n argocd --type merge -p '{"metadata":{"annotations":{"service.beta.kubernetes.io/aws-load-balancer-scheme":"internet-facing","service.beta.kubernetes.io/aws-load-balancer-nlb-target-type":"ip","service.beta.kubernetes.io/aws-load-balancer-attributes":"load_balancing.cross_zone.enabled=true"}},"spec":{"type":"LoadBalancer","loadBalancerClass":"eks.amazonaws.com/nlb"}}'
 kubectl get svc argocd-server -n argocd
 ```
 
@@ -49,7 +50,7 @@ cd devops-challenge-dustin
 kubectl apply -f infrastructure/eks/alb-ingressclass.yaml
 ```
 
-This will give an IP Address from AWS with a unique DNS hostname. 
+This configures the shared IngressClass. AWS provisions a load balancer and assigns it a DNS hostname when Argo CD deploys the application’s Ingress.
 
 ## 4. Create the applications on ArgoCD
 
