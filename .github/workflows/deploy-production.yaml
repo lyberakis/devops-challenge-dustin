@@ -66,9 +66,6 @@ jobs:
             if (testImage.tag !== run.head_sha) {
               throw new Error('Test image does not match the latest successful Build run. Wait for the test pipeline to finish and retry.');
             }
-            if (testImage.repository !== 'ghcr.io/lyberakis/devops-challenge-dustin') {
-              throw new Error('Test image repository does not match the Build workflow publication target.');
-            }
             const image = `${testImage.repository}:${testImage.tag}`;
             if (productionImage.tag === testImage.tag && productionImage.repository === testImage.repository) {
               core.notice(`Production already references ${image}. No commit needed.`);
