@@ -48,14 +48,16 @@ jobs:
               });
               return { ...file, text: Buffer.from(file.content, 'base64').toString('utf8') };
             };
+            const defaults = await readFile('charts/hello-world/values.yaml');
             const test = await readFile('charts/hello-world/values-test.yaml');
             const path = 'charts/hello-world/values-production.yaml';
             const production = await readFile(path);
             const imagePattern = /^image:\r?\n(?:[ \t]+[^\r\n]*(?:\r?\n|$))*/m;
+            const defaultImageBlock = defaults.text.match(imagePattern)?.[0];
             const readImage = text => {
               const block = text.match(imagePattern)?.[0];
               const tag = block?.match(/^  tag: ["']?([a-f0-9]{40})["']?[ \t]*\r?$/m)?.[1];
-              const repository = block?.match(/^  repository: ["']?([^\s"']+)["']?[ \t]*\r?$/m)?.[1];
+              const repository = defaultImageBlock?.match(/^  repository: ["']?([^\s"']+)["']?[ \t]*\r?$/m)?.[1];
               if (!tag || !repository) throw new Error('Expected image.tag (commit SHA) and image.repository in values.');
               return { block, tag, repository };
             };
