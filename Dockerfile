@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jdk-alpine-3.22 AS build
+FROM eclipse-temurin:25-jdk-alpine-3.23 AS build
 WORKDIR /build
 
 COPY gradlew settings.gradle.kts build.gradle.kts ./
@@ -7,7 +7,7 @@ RUN chmod +x gradlew
 COPY src/ src/
 RUN ./gradlew --no-daemon test installDist
 
-FROM eclipse-temurin:25-jre-alpine-3.22 AS runtime
+FROM eclipse-temurin:25-jre-alpine-3.23 AS runtime
 RUN addgroup -S -g 10001 app && adduser -S -D -H -u 10001 -G app app
 WORKDIR /app
 
