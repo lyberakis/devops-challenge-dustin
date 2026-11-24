@@ -76,7 +76,7 @@ fun Application.module(environment: String) {
         }
         get("/") {
             logger.debug("Returning greeting for environment {}", environment)
-            call.respond(mapOf("message" to "Hello, World!", "environment" to environment))
+            call.respond(mapOf("message" to "Hello, Dustin!", "environment" to environment))
         }
         get("/metrics") {
             call.respondText(metricsRegistry.scrape(), ContentType.parse("text/plain; version=0.0.4; charset=utf-8"))
